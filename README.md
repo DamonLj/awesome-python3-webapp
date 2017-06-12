@@ -1,6 +1,6 @@
 learn webapp
 
-#day4
+# day4
 
 问题：提示没有loop参数
 
@@ -8,6 +8,6 @@ learn webapp
 
 问题：无法连接localhost
 
-#grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
+- grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
 
-#上句话意思在 awesome 库中 添加用户 www-data(to) 密码 www-data(by)  @什么意思？？
+- 上句话意思在 awesome 库中 添加用户 www-data(to) 密码 www-data(by)  @什么意思？？
