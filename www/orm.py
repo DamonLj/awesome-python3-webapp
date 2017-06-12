@@ -9,10 +9,10 @@ def log(sql, args=()):
     logging.info('SQL:%s' % sql)
 
 @asyncio.coroutine
-def create_pool(loop, **kw):
+def create_pool(loop=None, **kw):
     logging.info('create database connection pool...')
-    global __poll
-    __poll = yield from aiomysql.create_pool(
+    global __pool
+    __pool = yield from aiomysql.create_pool(
         host=kw.get('host', 'localhost'),
         port=kw.get('port', 3306),
         user=kw['user'],
@@ -53,7 +53,7 @@ def execute(sql, args):
             raise
         return affected
 
-def create_args_stting(num):
+def create_args_string(num):
     L = []
     for n in range(num):
         L.append('?')
@@ -100,7 +100,7 @@ class ModelMetaclass(type):
             return type.__new__(cls, name, bases, attrs)
         #获取table名称：
         tableName = attrs.get('__table__', None) or name
-        logging.info('found model: %s (table: %s)' % (name.tableName))
+        logging.info('found model: %s (table: %s)' % (name, tableName))
         #获取所有的Field和主键名：
         mappings = dict()
         fields = []
@@ -130,7 +130,7 @@ class ModelMetaclass(type):
         attrs['__insert__'] = 'insert into `%s`(%s, `%s`) value (%s)'%(tableName, ','.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields)+1))
         attrs['__update__'] = 'update `%s` set %s where `%s`=?'%(tableName, ','.join(map(lambda f:'`%s`=?'%(mappings.get(f).name or f), fields)), primaryKey)
         attrs['__delete__'] = 'delete from `%s` where `%s`=?'%(tableName,primaryKey)
-        return type.new__(cls, name, bases, attrs)
+        return type.__new__(cls, name, bases, attrs)
 
 class Model(dict,metaclass=ModelMetaclass):
 

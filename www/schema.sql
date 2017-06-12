@@ -1,18 +1,16 @@
---schema.sql
-
 drop database if exists awesome;
 
 create database awesome;
 
 use awesome;
 
-grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' indentified by 'www-data';
+grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
 
 create table users(
     `id` varchar(50) not null,
     `email` varchar(50) not null,
     `passwd` varchar(50) not null,
-    `admin` boll not null,
+    `admin` bool not null,
     `name` varchar(50) not null,
     `image` varchar(500) not null,
     `created_at` real not null,
