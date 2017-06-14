@@ -11,4 +11,4 @@
 
 > grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
 
-> 上句话意思在 awesome 库中 添加用户 www-data(to) 密码 www-data(by)  @什么意思？？
+> 上句话意思在 awesome 库中 在localhost主机地址添加用户 www-data 密码 www-data(identified)
