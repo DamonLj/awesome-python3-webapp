@@ -138,4 +138,37 @@ class RequestHanlder(object):
             return r
         except APIError as e: #APIError另外创建
             return dict(error=e.error, data=e.data, message=e.message)
-        
+
+#注册一个URL处理函数
+def add_route(app, fn):
+    method = getattr(fn, '__methor__', None)
+    path = getattr(fn, '__route__', None)
+    if method is None or path is None:
+        return ValueError('@get or @post not defined in %s' % str(fn))
+    if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn): #判断是否为协程且生成器，不是使用isinstance
+        fn = asyncio.coroutine(fn)
+    logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ','.join(inspect.signature(fn).parameters.keys())))
+    app.router.add_route(method, path, RequestHanlder(fn))
+
+#直接导入文件，批量注册一个URL处理函数
+def add_routes(app, module_name):
+    n = module_name.rfind('.')
+    if n == -1:
+        mod = __import__(module_name, globals(), locals())
+    else:
+        name = module_name[n+1:]
+        mod = getattr(__import__(module_name[:n], globals(), locals(), [name], 0), name) #第一个参数为文件路径参数，不能掺加函数名，类名
+    for attr in dir(mod):
+        if attr.startswith('_'):
+            continue
+        fn = getattr(mod, attr)
+        if callable(fn):
+            method = getattr(fn, '__method__', None)
+            path = getattr(fn, '__route__', None)
+            if path and method: #查询path以及method是否存在而不是等待add_route函数查询，因为那里错误就要报错了
+                add_route(app, fn)
+
+def add_static(add):
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static') #输出当前文件夹中’static'的路径
+    app.router.add_static('/static/', path) #prefix (str) - URL path prefix for handled static files
+    logging.info('add static %s => %s' % ('/static', path))
