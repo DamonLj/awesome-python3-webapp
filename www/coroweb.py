@@ -10,7 +10,7 @@ from aiohttp import web
 from apis import  APIError
 
 #运用偏函数，一并生成GET、POST等请求方法的装饰器
-def request_(path, *, methor): #下划线和*意义？
+def request(path, methor): #下划线和*意义？
     '''
     Define decorator @post('/path')
     '''
@@ -131,8 +131,7 @@ class RequestHanlder(object):
             for name in self._require_kw_args:
                 if name not in kw:
                     return web.HTTPBadRequest('Missing argument: %s' % (name))
-        logging.info('call with args:%s' % str(kw))
-
+        logging.info('call with args: %s' % str(kw))
         try:
             r = await self.func(**kw)
             return r
@@ -147,13 +146,13 @@ def add_route(app, fn):
         return ValueError('@get or @post not defined in %s' % str(fn))
     if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn): #判断是否为协程且生成器，不是使用isinstance
         fn = asyncio.coroutine(fn)
-    logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ','.join(inspect.signature(fn).parameters.keys())))
+    logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHanlder(fn))
 
 #直接导入文件，批量注册一个URL处理函数
 def add_routes(app, module_name):
     n = module_name.rfind('.')
-    if n == -1:
+    if n == (-1):
         mod = __import__(module_name, globals(), locals())
     else:
         name = module_name[n+1:]
@@ -168,7 +167,7 @@ def add_routes(app, module_name):
             if path and method: #查询path以及method是否存在而不是等待add_route函数查询，因为那里错误就要报错了
                 add_route(app, fn)
 
-def add_static(add):
+def add_static(app):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static') #输出当前文件夹中’static'的路径
     app.router.add_static('/static/', path) #prefix (str) - URL path prefix for handled static files
     logging.info('add static %s => %s' % ('/static', path))
