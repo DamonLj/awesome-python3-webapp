@@ -76,7 +76,7 @@ class RequestHanlder(object):
 
     def __init__(self, app, fn):
         self._app = app
-        self._fn = fn
+        self._func = fn
         self._require_kw_args = get_required_kw_args(fn)
         self._name_kw_args = get_name_kw_args(fn)
         self._has_name_kw_args = has_name_kw_args(fn)
@@ -133,21 +133,21 @@ class RequestHanlder(object):
                     return web.HTTPBadRequest('Missing argument: %s' % (name))
         logging.info('call with args: %s' % str(kw))
         try:
-            r = await self.func(**kw)
+            r = await self._func(**kw)
             return r
         except APIError as e: #APIError另外创建
             return dict(error=e.error, data=e.data, message=e.message)
 
 #注册一个URL处理函数
 def add_route(app, fn):
-    method = getattr(fn, '__methor__', None)
+    method = getattr(fn, '__method__', None)
     path = getattr(fn, '__route__', None)
     if method is None or path is None:
         return ValueError('@get or @post not defined in %s' % str(fn))
     if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn): #判断是否为协程且生成器，不是使用isinstance
         fn = asyncio.coroutine(fn)
     logging.info('add route %s %s => %s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
-    app.router.add_route(method, path, RequestHanlder(fn))
+    app.router.add_route(method, path, RequestHanlder(app, fn)) #有两个参数
 
 #直接导入文件，批量注册一个URL处理函数
 def add_routes(app, module_name):
