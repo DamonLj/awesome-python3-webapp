@@ -22,6 +22,7 @@ def index(request):
         'blogs': blogs
     }
 
+
 @get('/api/users')
 @asyncio.coroutine
 def api_get_users():
