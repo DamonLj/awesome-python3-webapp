@@ -8,10 +8,12 @@ import aiomysql
 def log(sql, args=()):
     logging.info('SQL:%s' % sql)
 
+#创建一个全局的连接池，每个HTTP请求都从池中获得数据库连接
+#连接池由全局变量__pool储存，默认编码utf8
 @asyncio.coroutine
 def create_pool(loop=None, **kw):
     logging.info('create database connection pool...')
-    global __pool
+    global __pool #全局变量
     __pool = yield from aiomysql.create_pool(
         loop=loop,
         host=kw.get('host', 'localhost'),
@@ -25,6 +27,9 @@ def create_pool(loop=None, **kw):
         minsize=kw.get('minsize', 1),
     )
 
+#单独封装select，其他insert,update,delete一并封装，理由如下：
+#使用Cursor对象执行insert，update，delete语句时，执行结果由rowcount返回影响的行数，就可以拿到执行结果。
+#使用Cursor对象执行select语句时，通过featchall()可以拿到结果集。结果集是一个list，每个元素都是一个tuple，对应一行记录。
 @asyncio.coroutine
 def select(sql, args, size=None):
     log(sql, args)
@@ -53,6 +58,7 @@ def execute(sql, args):
             raise
         return affected
 
+#用于输出元类中创建sql_insert语句中的占位符
 def create_args_string(num):
     L = []
     for n in range(num):
@@ -94,7 +100,7 @@ class TextField(Field):
 
 class ModelMetaclass(type):
 
-    def __new__(cls, name, bases, attrs):
+    def __new__(cls, name, bases, attrs): #当前准备创建的类的对象；类的名字；类继承的父类集合；类的方法集合。
         #排除Model类本身:
         if name == 'Model':
             return type.__new__(cls, name, bases, attrs)
@@ -146,10 +152,10 @@ class Model(dict,metaclass=ModelMetaclass):
     def __setattr__(self, key, value):
         self[key] = value
 
-    def getValue(self, key):
+    def getValue(self, key): #直接调回内置函数，注意这里没有下划符,注意这里None的用处,是为了当user没有赋值数据时，返回None，调用于update
         return getattr(self, key, None)
 
-    def getValueOrDefault(self, key):
+    def getValueOrDefault(self, key): #第三个参数None，可以在没有返回数值时，返回None，调用于save
         value = getattr(self, key, None)
         if value is None:
             field = self.__mappings__[key]
