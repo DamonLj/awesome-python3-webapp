@@ -46,7 +46,7 @@ def select(sql, args, size=None):
         return rs
 
 @asyncio.coroutine
-def execute(sql, args):
+def execute(sql, args): #执行SQL命令，返回值为受影响的行数
     log(sql)
     with(yield from __pool) as conn:
         try:
