@@ -46,7 +46,7 @@ class Field(object):
         self.column_type = column_type
 
     def __str__(self):
-        return '<%s:%s>' % (self.__class__.__name__, self.name)
+        return '<%s, %s:%s>' % (self.__class__.__name__, self.column_type, self.name)
 
 class StringField(Field):
 
@@ -60,13 +60,12 @@ class IntegerField(Field):
 
 class User(Model):
     # 定义类的属性到列的映射：
-    #id = IntegerField('id')
-    #name = StringField('username')
-    #email = StringField('email')
-    #password = StringField('password')
-    pass
+    id = IntegerField('id')
+    name = StringField('username')
+    email = StringField('email')
+    password = StringField('password')
 
 # 创建一个实例：
 u = User(id=12345, name='Michael', email='test@orm.org', password='my-pwd')
-# 保存到数据库：
+
 print(u.id)

@@ -99,9 +99,13 @@ class TextField(Field):
         super().__init__(name, 'text', False, default)
 
 class ModelMetaclass(type):
+    '''
+    利用元类改变model类实例的生成方式，将类实例（User）输入的属性（attr，方便输入）
+    以一个新的组织（__mappings__，方便实用）储存，并删除原输入属性。
+    '''
 
     def __new__(cls, name, bases, attrs): #当前准备创建的类的对象；类的名字；类继承的父类集合；类的方法集合。
-        #排除Model类本身:
+        #排除Model基类本身，基类正常生成:
         if name == 'Model':
             return type.__new__(cls, name, bases, attrs)
         #获取table名称：
@@ -124,7 +128,7 @@ class ModelMetaclass(type):
                     fields.append(k)
         if not primaryKey:
             raise RuntimeError('Primary key not found.')
-        for k in mappings.keys():
+        for k in mappings.keys(): #删除原来输入的属性
             attrs.pop(k)
         escaped_fields = list(map(lambda f: '`%s`' % f, fields))
         attrs['__mappings__'] = mappings #保存属性和列的映射关系
@@ -135,7 +139,7 @@ class ModelMetaclass(type):
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ','.join(escaped_fields), tableName)
         attrs['__insert__'] = 'insert into `%s`(%s, `%s`) value (%s)'%(tableName, ','.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields)+1))
         attrs['__update__'] = 'update `%s` set %s where `%s`=?'%(tableName, ','.join(map(lambda f:'`%s`=?'%(mappings.get(f).name or f), fields)), primaryKey)
-        attrs['__delete__'] = 'delete from `%s` where `%s`=?'%(tableName,primaryKey)
+        attrs['__delete__'] = 'delete from `%s` where `%s`=?'%(tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs)
 
 class Model(dict,metaclass=ModelMetaclass):
