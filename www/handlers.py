@@ -8,7 +8,7 @@ import re, time, json, logging, hashlib, base64, asyncio
 import markdown2
 
 from coroweb import get, post
-from apis import APIValueError, APIResourceNotFoundError
+from apis import APIValueError, APIResourceNotFoundError, APIPermissionError
 
 from models import User, Comment, Blog, next_id
 
@@ -17,6 +17,10 @@ from config import configs
 
 COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
+
+def check_admin(request):
+    if request.__user__ is None or not request.__user__.admin:
+        raise APIPermissionError()
 
 def user2cookie(user, max_age):
     '''
@@ -139,3 +143,7 @@ def api_register_user(*, email, name, passwd):
     r.content_type = 'application/json'
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
+
+@post('/api/blogs')
+def api_create_blog(request, *, name, summary, content):
+

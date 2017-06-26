@@ -10,7 +10,7 @@ from aiohttp import web
 from apis import  APIError
 
 #运用偏函数，一并生成GET、POST等请求方法的装饰器
-def request(path, methor): #下划线和*意义？
+def request(path, methor):
     '''
     Define decorator @post('/path')
     '''
