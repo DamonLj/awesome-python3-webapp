@@ -104,7 +104,7 @@ class RequestHanlder(object):
                 else:
                     return web.HTTPBadRequest('Unsupported Content_type:%s' % (request.content_type))
             if request.method == 'GET':
-                qs = request.query_string() #The query string in the URL
+                qs = request.query_string #The query string in the URL
                 if qs:
                     for k, v in parse.parse_qs(qs, True).items():
                     # Parse a query string given as a string argument.Data are returned as a dictionary.

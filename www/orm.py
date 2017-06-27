@@ -206,7 +206,7 @@ class Model(dict,metaclass=ModelMetaclass):
         rs = await  select(' '.join(sql), args, 1)
         if len(rs) == 0:
             return None
-        return rs[0]['_number_']
+        return rs[0]['_num_']
 
     @classmethod
     @asyncio.coroutine
