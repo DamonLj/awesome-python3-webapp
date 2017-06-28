@@ -164,7 +164,7 @@ _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$'
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
 @post('/api/users')
-def api_register_user(*, email, name, passwd):
+def api_register_user(*, email, name, passwd): #*代表可变参数，使后边的参数为命名关键字参数.*后边不可有参数，否则不是KEYWORD_ONLY
     if not name or not name.strip():
         raise APIValueError('name')
     if not email or not _RE_EMAIL.match(email):

@@ -32,31 +32,29 @@ def get_required_kw_args(fn): #收集没有默认值的命名关键字参数
     for name, param in params.items():
         if param.kind == inspect.Parameter.KEYWORD_ONLY and param.default == inspect.Parameter.empty:
             args.append(name)
-        return tuple(args)
+    return tuple(args)
 
-def get_name_kw_args(fn): #收集命名关键字参数
+def get_named_kw_args(fn): #收集命名关键字参数
     args = []
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.KEYWORD_ONLY:
             args.append(name)
-        return tuple(args)
+    return tuple(args) #return 在 for 循环外边，否则循环只进行一次！
 
-def has_name_kw_args(fn): #判断有没有命名关键字参数
-    args = []
+def has_named_kw_args(fn): #判断有没有命名关键字参数
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.KEYWORD_ONLY:
             return True
 
-def has_var_kw_args(fn): #判断有没有关键字参数
-    args = []
+def has_var_kw_arg(fn): #判断有没有关键字参数
     params = inspect.signature(fn).parameters
     for name, param in params.items():
         if param.kind == inspect.Parameter.VAR_KEYWORD:
             return True
 
-def has_request_args(fn): #判断是否含有名叫‘request’参数，且该参数是否为最后一个参数
+def has_request_arg(fn): #判断是否含有名叫‘request’参数，且该参数是否为最后一个参数
     params = inspect.signature(fn).parameters
     sig = inspect.signature(fn)
     found = False
@@ -77,22 +75,22 @@ class RequestHanlder(object):
     def __init__(self, app, fn):
         self._app = app
         self._func = fn
-        self._require_kw_args = get_required_kw_args(fn)
-        self._name_kw_args = get_name_kw_args(fn)
-        self._has_name_kw_args = has_name_kw_args(fn)
-        self._has_var_kw_args = has_var_kw_args(fn)
-        self._has_request_args = has_request_args(fn)
+        self._required_kw_args = get_required_kw_args(fn)
+        self._named_kw_args = get_named_kw_args(fn)
+        self._has_named_kw_args = has_named_kw_args(fn)
+        self._has_var_kw_arg = has_var_kw_arg(fn)
+        self._has_request_arg = has_request_arg(fn)
 
     async def __call__(self, request): #__call__构造协程
         kw = None
-        if self._has_name_kw_args or self._has_var_kw_args:
+        if self._has_named_kw_args or self._has_var_kw_arg or self._required_kw_args:
             if request.method == 'POST':
                 if not request.content_type: #查询有没提交数据的格式（EncType）
                     return web.HTTPBadRequest('Missing Content_type.')
                 ct = request.content_type.lower()
                 if ct.startswith('application/json'):
                     params = await request.json() #read request body decoded as json.
-                    if not isinstance(params,dict):
+                    if not isinstance(params, dict):
                         return web.HTTPBadRequest('JSON body must be object.')
                     kw = params
                 elif ct.startswith('application/x-www-form-urlencoded') or ct.startswith('multipart/form-data'):
@@ -114,22 +112,21 @@ class RequestHanlder(object):
         if kw is None:
             kw = dict(**request.match_info)
         else:
-            if not self._has_var_kw_args and self._name_kw_args:
+            if not self._has_var_kw_arg and self._named_kw_args:
             # 当函数参数没有关键字参数时，移去request除命名关键字参数所有的参数信息
                 copy = dict()
-                for name in self._name_kw_args:
+                for name in self._named_kw_args:
                     if name in kw:
                         copy[name] = kw[name]
                 kw = copy
             for k, v in request.match_info.items(): #检查命名关键字参数
                 if k in kw:
                     logging.warning('Duplicate arg name in named arg and kw args:%s' % k)
-                kw[k] = v
-        if self._has_request_args:
+        if self._has_request_arg:
             kw['request'] = request
-        if self._require_kw_args: #假如命名关键字参数（没有附加默认值），request没有提供相应的数值，报错
-            for name in self._require_kw_args:
-                if name not in kw:
+        if self._required_kw_args: #假如命名关键字参数（没有附加默认值），request没有提供相应的数值，报错
+            for name in self._required_kw_args:
+                if not name in kw:
                     return web.HTTPBadRequest('Missing argument: %s' % (name))
         logging.info('call with args: %s' % str(kw))
         try:
