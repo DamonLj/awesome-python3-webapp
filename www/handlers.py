@@ -171,6 +171,7 @@ def api_register_user(*, email, name, passwd): #*代表可变参数，使后边�
         raise APIValueError('email')
     if not passwd or not _RE_SHA1.match(passwd):
         raise APIValueError('passwd')
+    print(User.findAll('email=?', [email]))
     users = yield from User.findAll('email=?', [email])
     if len(users) > 0:
         raise APIError('register:failed', 'email', 'Email is already in use.')
